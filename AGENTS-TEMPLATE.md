@@ -727,10 +727,7 @@ lando drush config:set system.site uuid [correct-uuid]  # UUID mismatch
 
 ### Memory Issues
 ```bash
-# Add a PHP override in `.lando.local.yml`, for example:
-# config:
-#   config:
-#     php: config/php.ini
+# Point `config.config.php` in `.lando.local.yml` to a custom `config/php.ini`, then apply it
 lando rebuild -y
 # Or: lando php -d memory_limit=1G vendor/bin/drush [cmd]
 ```
