@@ -224,7 +224,7 @@ lando drush state:get|set|delete [key] [value]
 lando drush cr                                    # Rebuild all
 lando drush cache:clear [render|dynamic_page_cache|config]
 
-# Redis (if enabled)
+# Redis (if enabled; replace `cache` with your Redis service name from `.lando.yml`)
 lando ssh -s cache -c "redis-cli INFO stats"       # Redis stats
 lando ssh -s cache -c "redis-cli FLUSHALL"         # Clear Redis
 
@@ -727,7 +727,10 @@ lando drush config:set system.site uuid [correct-uuid]  # UUID mismatch
 
 ### Memory Issues
 ```bash
-# Set `config.php: "path/to/php.ini"` or another PHP override in `.lando.local.yml`, then apply it
+# Add a PHP override in `.lando.local.yml`, for example:
+# config:
+#   config:
+#     php: config/php.ini
 lando rebuild -y
 # Or: lando php -d memory_limit=1G vendor/bin/drush [cmd]
 ```
