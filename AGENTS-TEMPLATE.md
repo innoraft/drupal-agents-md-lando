@@ -43,7 +43,7 @@ Sites: [site1.domain], [site2.domain], [site3.domain]
 ### AI Integration
 Provider: [OpenAI | Other] | Modules: [List modules]
 Uses: content generation, translation, summarization
-API keys in `.ddev/.env`
+API keys in `.lando.local.yml` under service `env` keys
 -->
 
 <!-- COMMERCE (uncomment if applicable)
@@ -82,7 +82,7 @@ web/themes/contrib/
 vendor/
 web/sites/*/files/
 web/sites/*/settings.local.php
-.ddev/
+/.lando.local.yml
 node_modules/
 .env
 ```
@@ -94,52 +94,52 @@ node_modules/
 ### Setup
 ```bash
 git clone [REPOSITORY_URL] && cd [PROJECT_DIR]
-ddev start && ddev [BUILD_COMMAND]
+lando start && lando [BUILD_COMMAND]
 ```
 
-**DDEV**: `ddev ssh` (container), `ddev describe` (info), `ddev drush [cmd]`
+**Lando**: `lando ssh` (container), `lando info` (info), `lando drush [cmd]`
 
-### Custom DDEV Commands
-Location: `.ddev/commands/host/[name]`
-**WARNING**: Don't use `## #ddev-generated` comments - they break command recognition.
+### Custom Lando Tooling
+Location: `.lando.yml` under `tooling`
+Define custom commands in the `tooling` section so they are available as `lando [name]`.
 
 ### Drush Commands
 
 ```bash
 # Core commands
-ddev drush status                    # Status check
-ddev drush cr                        # Cache rebuild
-ddev drush cex                       # Config export
-ddev drush cim                       # Config import
-ddev drush updb                      # Database updates
+lando drush status                    # Status check
+lando drush cr                        # Cache rebuild
+lando drush cex                       # Config export
+lando drush cim                       # Config import
+lando drush updb                      # Database updates
 
 # Database & PHP eval
-ddev drush sql:query "SELECT * FROM node_field_data LIMIT 5;"
-ddev drush php:eval "echo 'Hello World';"
+lando drush sql:query "SELECT * FROM node_field_data LIMIT 5;"
+lando drush php:eval "echo 'Hello World';"
 
 # Test services and entities
-ddev drush php:eval "var_dump(\Drupal::hasService('entity_type.manager'));"
-ddev drush php:eval "\$node = \Drupal::entityTypeManager()->getStorage('node')->load(1); var_dump(\$node->getTitle());"
-ddev drush php:eval "var_dump(\Drupal::config('system.site')->get('name'));"
-ddev drush php:eval "var_dump(\Drupal::service('custom_module.service_name'));"
+lando drush php:eval "var_dump(\Drupal::hasService('entity_type.manager'));"
+lando drush php:eval "\$node = \Drupal::entityTypeManager()->getStorage('node')->load(1); var_dump(\$node->getTitle());"
+lando drush php:eval "var_dump(\Drupal::config('system.site')->get('name'));"
+lando drush php:eval "var_dump(\Drupal::service('custom_module.service_name'));"
 
-# Quick setup (pull from platform)
-ddev pull platform -y && ddev drush cim -y && ddev drush cr && ddev drush uli
+# Quick setup (import DB + sync config)
+lando db-import database.sql.gz && lando drush cim -y && lando drush cr && lando drush uli
 ```
 
-<!-- MULTISITE: Use `ddev drush -l [site.ddev.site] [cmd]` -->
+<!-- MULTISITE: Use `lando drush -l [site.lndo.site] [cmd]` -->
 
 ### Composer
 ```bash
-ddev composer outdated 'drupal/*'                    # Check updates
-ddev composer update drupal/[module] --with-deps     # Update module
-ddev composer require drupal/core:X.Y.Z drupal/core-recommended:X.Y.Z --update-with-all-dependencies  # Core update
+lando composer outdated 'drupal/*'                    # Check updates
+lando composer update drupal/[module] --with-deps     # Update module
+lando composer require drupal/core:X.Y.Z drupal/core-recommended:X.Y.Z --update-with-all-dependencies  # Core update
 ```
 
 **Scripts** in `composer.json`: `build`, `deploy`, `test`, `phpcs`, `phpstan`
 
 ### Environment Variables
-Store in `.ddev/.env` (gitignored). Access: `$_ENV['VAR']`. Restart DDEV after changes.
+Store in `.lando.local.yml` (gitignored) under service `env` keys. Access in PHP via `getenv('VAR')` or `$_ENV['VAR']`. Rebuild Lando after changes.
 
 ### Patches
 Structure: `./patches/{core,contrib/[module],custom}/`
@@ -155,19 +155,19 @@ Always include issue numbers in descriptions. Monitor upstream for merged patche
 
 ```bash
 # PHPStan - static analysis
-ddev exec vendor/bin/phpstan analyze web/modules/custom --level=1
+lando ssh -c "vendor/bin/phpstan analyze web/modules/custom --level=1"
 
 # PHPCS - coding standards check
-ddev exec vendor/bin/phpcs --standard=Drupal web/modules/custom/
+lando ssh -c "vendor/bin/phpcs --standard=Drupal web/modules/custom/"
 
 # PHPCBF - auto-fix coding standards
-ddev exec vendor/bin/phpcbf --standard=Drupal web/modules/custom/
+lando ssh -c "vendor/bin/phpcbf --standard=Drupal web/modules/custom/"
 
 # Rector - code modernization (run in container)
-ddev ssh && vendor/bin/rector process web/modules/custom --dry-run
+lando ssh -c "vendor/bin/rector process web/modules/custom --dry-run"
 
 # Upgrade Status - Drupal compatibility check
-ddev drush upgrade_status:analyze --all
+lando drush upgrade_status:analyze --all
 ```
 
 **Config files**: `phpstan.neon`, `phpcs.xml`, `rector.php`
@@ -177,16 +177,16 @@ ddev drush upgrade_status:analyze --all
 
 ```bash
 # PHPUnit
-ddev exec vendor/bin/phpunit web/modules/custom
-ddev exec vendor/bin/phpunit web/modules/custom/[module]/tests/src/Unit/MyTest.php
-ddev exec vendor/bin/phpunit --coverage-html coverage web/modules/custom
+lando ssh -c "vendor/bin/phpunit web/modules/custom"
+lando ssh -c "vendor/bin/phpunit web/modules/custom/[module]/tests/src/Unit/MyTest.php"
+lando ssh -c "vendor/bin/phpunit --coverage-html coverage web/modules/custom"
 
 # Codeception
-ddev exec vendor/bin/codecept run [acceptance|functional|unit]
-ddev exec vendor/bin/codecept run --steps --debug --html
+lando ssh -c "vendor/bin/codecept run [acceptance|functional|unit]"
+lando ssh -c "vendor/bin/codecept run --steps --debug --html"
 
 # Debug failed tests
-ddev exec vendor/bin/phpunit --testdox --verbose [test-file]
+lando ssh -c "vendor/bin/phpunit --testdox --verbose [test-file]"
 ```
 
 **Drupal test types** (in `tests/src/`): `Unit/` (isolated), `Kernel/` (minimal bootstrap), `Functional/` (full Drupal), `FunctionalJavascript/`
@@ -196,42 +196,42 @@ ddev exec vendor/bin/phpunit --testdox --verbose [test-file]
 ## Debugging
 
 ```bash
-# Xdebug
-ddev xdebug on|off                              # Toggle (disable when not debugging for perf)
+# Xdebug (set `xdebug: true|false` in `.lando.yml` or `.lando.local.yml`)
+lando rebuild -y                                  # Apply Xdebug setting changes
 
 # Container & DB access
-ddev ssh                                         # Web container
-ddev mysql                                       # MySQL CLI
-ddev mysql -e "SELECT..."                        # Direct query
-ddev export-db --file=backup.sql.gz             # Export
-ddev import-db --file=backup.sql.gz             # Import
+lando ssh                                         # App container shell
+lando mysql                                       # MySQL CLI
+lando mysql -e "SELECT..."                        # Direct query
+lando db-export backup.sql.gz             # Export
+lando db-import backup.sql.gz             # Import
 
 # Logs
-ddev logs -f                                     # Container logs (follow)
-ddev drush watchdog:show --count=50 --severity=Error
+lando logs -f                                     # App logs (follow)
+lando drush watchdog:show --count=50 --severity=Error
 
 # State
-ddev drush state:get|set|delete [key] [value]
+lando drush state:get|set|delete [key] [value]
 ```
 
 **IDE**: PhpStorm (port 9003), VS Code (PHP Debug extension)
-**Tips**: `ddev describe` (URLs/services), `ddev debug` (DDEV issues), Twig debug in `development.services.yml`
+**Tips**: `lando info` (URLs/services), `lando rebuild` (Landofile changes), Twig debug in `development.services.yml`
 
 ## Performance
 
 ```bash
 # Cache
-ddev drush cr                                    # Rebuild all
-ddev drush cache:clear [render|dynamic_page_cache|config]
+lando drush cr                                    # Rebuild all
+lando drush cache:clear [render|dynamic_page_cache|config]
 
-# Redis (if enabled)
-ddev redis-cli INFO stats|memory
-ddev redis-cli FLUSHALL                          # Clear Redis
+# Redis (if enabled; replace `[redis-service]` with your Redis service name from `.lando.yml`)
+lando ssh -s [redis-service] -c "redis-cli INFO stats"       # Redis stats
+lando ssh -s [redis-service] -c "redis-cli FLUSHALL"         # Clear Redis
 
 # DB performance
-ddev mysql -e "SELECT table_name, round(((data_length+index_length)/1024/1024),2) 'MB' FROM information_schema.TABLES WHERE table_schema=DATABASE() ORDER BY (data_length+index_length) DESC;"
-ddev mysql -e "SHOW VARIABLES LIKE 'slow_query%';"
-ddev drush sql:query "OPTIMIZE TABLE cache_bootstrap, cache_config, cache_data, cache_default, cache_discovery, cache_dynamic_page_cache, cache_entity, cache_menu, cache_render;"
+lando mysql -e "SELECT table_name, round(((data_length+index_length)/1024/1024),2) 'MB' FROM information_schema.TABLES WHERE table_schema=DATABASE() ORDER BY (data_length+index_length) DESC;"
+lando mysql -e "SHOW VARIABLES LIKE 'slow_query%';"
+lando drush sql:query "OPTIMIZE TABLE cache_bootstrap, cache_config, cache_data, cache_default, cache_discovery, cache_dynamic_page_cache, cache_entity, cache_menu, cache_render;"
 ```
 
 **Optimization**: Enable page cache + dynamic page cache, CSS/JS aggregation, Redis/Memcache, CDN for assets, image styles with lazy loading
@@ -367,12 +367,12 @@ user_role_revoke_permissions($role_id, ['permission']);
 
 ```bash
 # Setup
-ddev drush pm:enable language locale content_translation config_translation
-ddev drush language:add pl && ddev drush language:add es
-ddev drush locale:check && ddev drush locale:update
+lando drush pm:enable language locale content_translation config_translation
+lando drush language:add pl && lando drush language:add es
+lando drush locale:check && lando drush locale:update
 
 # Enable content translation
-ddev drush config:set language.content_settings.node.article third_party_settings.content_translation.enabled true
+lando drush config:set language.content_settings.node.article third_party_settings.content_translation.enabled true
 ```
 
 **Detection**: Configure at `/admin/config/regional/language/detection` - use URL prefix (`/en/`, `/pl/`) for SEO
@@ -386,14 +386,14 @@ ddev drush config:set language.content_settings.node.article third_party_setting
 ## Configuration Management
 
 ```bash
-ddev drush cex                    # Export config
-ddev drush cim                    # Import config
-ddev drush config:status          # Show differences
+lando drush cex                    # Export config
+lando drush cim                    # Import config
+lando drush config:status          # Show differences
 ```
 
 <!-- CONFIG SPLIT (uncomment if using)
 Structure: config/{sync,dev,staging,prod}/
-Commands: `ddev drush config-split:export dev`, `ddev drush csex dev`
+Commands: `lando drush config-split:export dev`, `lando drush csex dev`
 Use cases: dev modules (devel), prod modules (purge, cdn), env-specific settings
 -->
 
@@ -407,13 +407,13 @@ Location: /config/sync/config_ignore.settings.yml
 
 ```bash
 # Security updates
-ddev drush pm:security
-ddev composer update drupal/core-recommended --with-dependencies
-ddev composer update --security-only
+lando drush pm:security
+lando composer update drupal/core-recommended --with-dependencies
+lando composer update --security-only
 
 # Audit
-ddev drush role:perm:list
-ddev drush watchdog:show --severity=Error --count=100
+lando drush role:perm:list
+lando drush watchdog:show --severity=Error --count=100
 ```
 
 **Hardening**: `chmod 444 settings.php`, `chmod 755 sites/default/files`, disable PHP in files dir
@@ -425,8 +425,8 @@ ddev drush watchdog:show --severity=Error --count=100
 ### JSON:API (Core)
 
 ```bash
-ddev drush pm:enable jsonapi
-# Optional: ddev composer require drupal/jsonapi_extras
+lando drush pm:enable jsonapi
+# Optional: lando composer require drupal/jsonapi_extras
 ```
 
 **Endpoints**:
@@ -440,15 +440,15 @@ POST /jsonapi/node/article  (Content-Type: application/vnd.api+json, Authorizati
 ### GraphQL
 
 ```bash
-ddev composer require drupal/graphql drupal/graphql_compose
-ddev drush pm:enable graphql graphql_compose
+lando composer require drupal/graphql drupal/graphql_compose
+lando drush pm:enable graphql graphql_compose
 # Explorer at /admin/config/graphql
 ```
 
 ### Authentication (Simple OAuth)
 
 ```bash
-ddev composer require drupal/simple_oauth && ddev drush pm:enable simple_oauth
+lando composer require drupal/simple_oauth && lando drush pm:enable simple_oauth
 openssl genrsa -out keys/private.key 2048 && openssl rsa -in keys/private.key -pubout -out keys/public.key
 # POST /oauth/token with grant_type, client_id, client_secret, username, password
 # Use: Authorization: Bearer {access_token}
@@ -480,10 +480,10 @@ OAuth tokens (not basic auth), rate limiting, HTTPS, validate input, API documen
 ### Core Modules
 
 ```bash
-ddev composer require drupal/metatag drupal/pathauto drupal/simple_sitemap drupal/redirect drupal/schema_metatag
-ddev drush pm:enable metatag metatag_open_graph metatag_twitter_cards pathauto simple_sitemap redirect schema_metatag
-ddev drush simple-sitemap:generate    # Generate sitemap at /sitemap.xml
-ddev drush pathauto:generate          # Generate URL aliases
+lando composer require drupal/metatag drupal/pathauto drupal/simple_sitemap drupal/redirect drupal/schema_metatag
+lando drush pm:enable metatag metatag_open_graph metatag_twitter_cards pathauto simple_sitemap redirect schema_metatag
+lando drush simple-sitemap:generate    # Generate sitemap at /sitemap.xml
+lando drush pathauto:generate          # Generate URL aliases
 ```
 
 ### Schema.org & Open Graph
@@ -497,7 +497,7 @@ Configure at `/admin/config/search/metatag/global`:
 ### Multilingual SEO
 
 ```bash
-ddev composer require drupal/hreflang && ddev drush pm:enable hreflang
+lando composer require drupal/hreflang && lando drush pm:enable hreflang
 ```
 Twig: `{% for lang in languages %}<link rel="alternate" hreflang="{{ lang.id }}" href="..."/>{% endfor %}`
 
@@ -526,7 +526,7 @@ THEME DISCOVERY FOR AI/LLM:
 3. find web/themes/custom/[theme] -name "*.twig" → templates
 4. grep "function.*_preprocess" [theme].theme → preprocess hooks
 5. ls components/ → SDC components
-6. ddev drush sdc:list → list all components
+6. lando drush sdc:list → list all components
 
 Theme files: [theme].info.yml (definition), [theme].libraries.yml (assets), [theme].theme (hooks), templates/ (Twig), components/ (SDC)
 -->
@@ -558,7 +558,7 @@ global:
 
 **Naming**: `node--[type]--[view-mode].html.twig`, `paragraph--[type].html.twig`, `block--[type].html.twig`, `field--[name]--[entity].html.twig`
 
-**Override**: Enable debug → view source for suggestions → copy from core/themes → place in templates/ → `ddev drush cr`
+**Override**: Enable debug → view source for suggestions → copy from core/themes → place in templates/ → `lando drush cr`
 
 **Template directory structure**:
 ```
@@ -593,7 +593,7 @@ function [theme]_theme_suggestions_node_alter(array &$suggestions, array $variab
 
 ### Single Directory Components (SDC)
 
-Drupal 10.1+ core, or `ddev composer require drupal/sdc` for 10.0
+Drupal 10.1+ core, or `lando composer require drupal/sdc` for 10.0
 
 **Structure**: `components/[name]/` with `[name].component.yml`, `[name].twig`, optional `.css`/`.js`
 
@@ -606,7 +606,7 @@ slots: { content: { title: Content } }
 
 **Usage**: `{% include '[theme]:card' with { title: node.label, link: url } %}` or `{% embed %}` for slots
 
-**Commands**: `ddev drush sdc:list`, `ddev drush pm:enable sdc`
+**Commands**: `lando drush sdc:list`, `lando drush pm:enable sdc`
 
 ### Troubleshooting
 
@@ -634,14 +634,14 @@ rm -rf dist/ css/ js/compiled/                          # Clear build cache
 # Create /web/modules/custom/[prefix]_[name]/ with:
 # - [prefix]_[name].info.yml (name, type:module, core_version_requirement:^10||^11, package:Custom)
 # - [prefix]_[name].module (hooks), .routing.yml, .permissions.yml, .services.yml as needed
-ddev drush pm:enable [prefix]_[name] && ddev drush cr
+lando drush pm:enable [prefix]_[name] && lando drush cr
 ```
 
 ### Update Core
 ```bash
-ddev export-db --file=backup.sql.gz                                    # Backup
-ddev composer update drupal/core-recommended drupal/core-composer-scaffold --with-dependencies
-ddev drush updb && ddev drush cr                                       # Updates + cache
+lando db-export backup.sql.gz                                    # Backup
+lando composer update drupal/core-recommended drupal/core-composer-scaffold --with-dependencies
+lando drush updb && lando drush cr                                       # Updates + cache
 ```
 
 ### Database Migration
@@ -656,14 +656,14 @@ function [module]_update_10001() {
 
 ### Tests
 ```bash
-ddev exec vendor/bin/phpunit web/modules/custom/[module]/tests   # PHPUnit
-ddev exec vendor/bin/codecept run                                 # Codeception
+lando ssh -c "vendor/bin/phpunit web/modules/custom/[module]/tests"   # PHPUnit
+lando ssh -c "vendor/bin/codecept run"                                # Codeception
 # Dirs: tests/src/Unit/, Kernel/, Functional/; tests/acceptance/
 ```
 
 ### Permissions
 ```bash
-ddev drush role:perm:list [role]                                  # List
+lando drush role:perm:list [role]                                  # List
 # PHP: user_role_grant_permissions($role_id, ['perm1']); drupal_flush_all_caches();
 ```
 
@@ -671,71 +671,72 @@ ddev drush role:perm:list [role]                                  # List
 
 ### Quick Fixes
 ```bash
-ddev drush cr                                                     # Clear cache
-ddev restart                                                      # Restart containers
-ddev xdebug on|off                                               # Debug mode
-ddev drush watchdog:show --count=50                              # Check logs
+lando drush cr                                                     # Clear cache
+lando restart                                                      # Restart containers
+lando rebuild -y                                                   # Apply Landofile or Xdebug changes
+lando drush watchdog:show --count=50                              # Check logs
 ```
 
 ### Cache Not Clearing
 ```bash
-ddev drush cr                                                     # Standard
-rm -rf web/sites/default/files/php/twig/* && ddev drush cr       # Twig
-ddev drush sql:query "TRUNCATE cache_render;" && ddev drush cr   # Nuclear
+lando drush cr                                                     # Standard
+rm -rf web/sites/default/files/php/twig/* && lando drush cr       # Twig
+lando drush sql:query "TRUNCATE cache_render;" && lando drush cr   # Nuclear
 ```
 
 ### Database Issues
 ```bash
-ddev drush sql:cli                     # Check connection (SELECT 1;)
-ddev drush updb && ddev drush entity:updates   # Pending updates
-ddev mysql -e "REPAIR TABLE [name];"   # Repair table
+lando drush sql:cli                     # Check connection (SELECT 1;)
+lando drush updb && lando drush entity:updates   # Pending updates
+lando mysql -e "REPAIR TABLE [name];"   # Repair table
 ```
 
-### DDEV Issues
+### Lando Issues
 ```bash
-ddev restart                           # Soft restart
-ddev stop && ddev start                # Full restart
-ddev delete -O && ddev start           # Recreate containers
-ddev logs                              # View logs
+lando restart                           # Soft restart
+lando stop && lando start                # Full restart
+lando destroy -y && lando start           # Recreate containers
+lando logs                              # View logs
 ```
 
 ### Module Installation
 ```bash
-ddev composer why-not drupal/[module]  # Check deps
-ddev composer require drupal/[module] && ddev drush pm:enable [module]
-ddev drush updb && ddev drush entity:updates   # Schema issues
+lando composer why-not drupal/[module]  # Check deps
+lando composer require drupal/[module] && lando drush pm:enable [module]
+lando drush updb && lando drush entity:updates   # Schema issues
 ```
 
 ### Permissions
 ```bash
-ddev exec chmod -R 775 web/sites/default/files
-ddev exec chmod 444 web/sites/default/settings.php
+lando ssh -c "chmod -R 775 web/sites/default/files"
+lando ssh -c "chmod 444 web/sites/default/settings.php"
 ```
 
 ### WSOD (White Screen)
 ```bash
-ddev drush config:set system.logging error_level verbose
-ddev logs && ddev drush watchdog:show --count=50
-ddev exec tail -f /var/log/php/php-fpm.log    # Check fatal errors
+lando drush config:set system.logging error_level verbose
+lando logs && lando drush watchdog:show --count=50
+lando ssh -c "tail -f /var/log/php/php-fpm.log"    # Check fatal errors
 ```
 
 ### Config Import Fails
 ```bash
-ddev drush config:status              # Check status
-ddev drush config:set system.site uuid [correct-uuid]  # UUID mismatch
+lando drush config:status              # Check status
+lando drush config:set system.site uuid [correct-uuid]  # UUID mismatch
 ```
 
 ### Memory Issues
 ```bash
-echo "memory_limit = 512M" >> .ddev/php/php.ini && ddev restart
-# Or: ddev exec php -d memory_limit=1G vendor/bin/drush [cmd]
+# Add a custom PHP override in `.lando.local.yml` or your Landofile, then apply it
+lando rebuild -y
+# Or: lando php -d memory_limit=1G vendor/bin/drush [cmd]
 ```
 
 ## Additional Resources
 
 - **Project Documentation**: `.cursor/TASKS_AND_PROBLEMS.md`
 - **Drupal Documentation**: https://www.drupal.org/docs
-- **DDEV Documentation**: https://ddev.readthedocs.io/
+- **Lando Documentation**: https://docs.lando.dev/
 
 ---
 
@@ -792,29 +793,29 @@ cat config/sync/node.type.article.yml
 
 ```bash
 # List all entity types
-ddev drush entity:info
+lando drush entity:info
 
 # List bundles for entity type
-ddev drush entity:bundle-info node
-ddev drush entity:bundle-info paragraph
-ddev drush entity:bundle-info media
-ddev drush entity:bundle-info taxonomy_term
+lando drush entity:bundle-info node
+lando drush entity:bundle-info paragraph
+lando drush entity:bundle-info media
+lando drush entity:bundle-info taxonomy_term
 
 # List fields for entity type and bundle
-ddev drush field:list node article
-ddev drush field:list paragraph text
+lando drush field:list node article
+lando drush field:list paragraph text
 
 # Get field info
-ddev drush field:info node article field_image
+lando drush field:info node article field_image
 
 # Export all config
-ddev drush config:export
+lando drush config:export
 
 # Get specific config
-ddev drush config:get node.type.article
+lando drush config:get node.type.article
 
 # List all config
-ddev drush config:list | grep node.type
+lando drush config:list | grep node.type
 ```
 
 ### 3. PHP/DRUSH PHP:EVAL
@@ -823,7 +824,7 @@ For programmatic access to field definitions:
 
 ```bash
 # Get all fields for content type
-ddev drush php:eval "
+lando drush php:eval "
 \$fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('node', 'article');
 foreach (\$fields as \$name => \$field) {
   echo \$name . ' - ' . \$field->getLabel() . ' (' . \$field->getType() . ')' . PHP_EOL;
@@ -831,13 +832,13 @@ foreach (\$fields as \$name => \$field) {
 "
 
 # Get field settings
-ddev drush php:eval "
+lando drush php:eval "
 \$field = \Drupal\field\Entity\FieldConfig::loadByName('node', 'article', 'field_image');
 print_r(\$field->getSettings());
 "
 
 # Get all bundles for entity type
-ddev drush php:eval "
+lando drush php:eval "
 \$bundles = \Drupal::service('entity_type.bundle.info')->getBundleInfo('node');
 foreach (\$bundles as \$id => \$info) {
   echo \$id . ' - ' . \$info['label'] . PHP_EOL;
@@ -845,7 +846,7 @@ foreach (\$bundles as \$id => \$info) {
 "
 
 # Export full entity structure as JSON
-ddev drush php:eval "
+lando drush php:eval "
 \$entity_types = ['node', 'paragraph', 'media', 'taxonomy_term'];
 \$result = [];
 foreach (\$entity_types as \$entity_type) {
@@ -873,8 +874,8 @@ echo json_encode(\$result, JSON_PRETTY_PRINT);
 ### RECOMMENDED WORKFLOW
 
 1. **First**: Check if `config/sync/` directory exists and list YAML files
-2. **Second**: Use `ddev drush entity:bundle-info [type]` for quick overview
-3. **Third**: Use `ddev drush field:list [type] [bundle]` for field details
+2. **Second**: Use `lando drush entity:bundle-info [type]` for quick overview
+3. **Third**: Use `lando drush field:list [type] [bundle]` for field details
 4. **Fourth**: Use `php:eval` for complex queries or full export
 
 -->
@@ -1063,4 +1064,3 @@ Examples:
 2024-01-13 | SECURITY: Applied security update for Drupal core 10.1.8
 2024-01-13 | NOTE: Custom entity queries must include ->accessCheck(TRUE/FALSE)
 ```
-

@@ -4,7 +4,7 @@
 
 [AGENTS.md](https://agents.md) template for Drupal projects. AI reads it once and knows your architecture, standards, and workflows.
 
-**Assumes DDEV-based development.**
+**Assumes Lando-based development.**
 
 ## Quick Start
 
@@ -29,7 +29,7 @@ Please:
 
 ## Phase 1: Project Discovery
 - [ ] Check composer.json for project name, Drupal version, PHP version
-- [ ] Check if DDEV is used (.ddev/config.yaml exists)
+- [ ] Check if Lando is used (.lando.yml exists)
 - [ ] Check web root directory name (web/, docroot/, html/, or other)
 - [ ] Check if multisite (web/sites/ or docroot/sites/ has multiple directories)
 - [ ] Check languages (config/sync/language.entity.*.yml or via drush if available)
@@ -98,7 +98,7 @@ After customization, show me:
 
 ## Template Covers
 
-- **Environment:** DDEV, Git workflow, Composer
+- **Environment:** Lando, Git workflow, Composer
 - **Quality:** PHPStan, PHPCS, PHPUnit, Codeception, Xdebug
 - **Development:** Code standards, entities, modules, forms, database
 - **Modern Drupal:** Headless/API, SEO, multilingual
