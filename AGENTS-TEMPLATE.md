@@ -43,7 +43,7 @@ Sites: [site1.domain], [site2.domain], [site3.domain]
 ### AI Integration
 Provider: [OpenAI | Other] | Modules: [List modules]
 Uses: content generation, translation, summarization
-API keys in `.lando.local.yml`
+API keys in `.lando.local.yml` under service `env` keys
 -->
 
 <!-- COMMERCE (uncomment if applicable)
@@ -82,7 +82,7 @@ web/themes/contrib/
 vendor/
 web/sites/*/files/
 web/sites/*/settings.local.php
-.lando.local.yml
+/.lando.local.yml
 node_modules/
 .env
 ```
@@ -139,7 +139,7 @@ lando composer require drupal/core:X.Y.Z drupal/core-recommended:X.Y.Z --update-
 **Scripts** in `composer.json`: `build`, `deploy`, `test`, `phpcs`, `phpstan`
 
 ### Environment Variables
-Store in `.lando.local.yml` (gitignored). Access via environment variables. Rebuild Lando after changes.
+Store in `.lando.local.yml` (gitignored) under service `env` keys. Access in PHP via `getenv('VAR')` or `$_ENV['VAR']`. Rebuild Lando after changes.
 
 ### Patches
 Structure: `./patches/{core,contrib/[module],custom}/`
@@ -224,9 +224,9 @@ lando drush state:get|set|delete [key] [value]
 lando drush cr                                    # Rebuild all
 lando drush cache:clear [render|dynamic_page_cache|config]
 
-# Redis (if enabled; replace `cache` with your Redis service name from `.lando.yml`)
-lando ssh -s cache -c "redis-cli INFO stats"       # Redis stats
-lando ssh -s cache -c "redis-cli FLUSHALL"         # Clear Redis
+# Redis (if enabled; replace `[redis-service]` with your Redis service name from `.lando.yml`)
+lando ssh -s [redis-service] -c "redis-cli INFO stats"       # Redis stats
+lando ssh -s [redis-service] -c "redis-cli FLUSHALL"         # Clear Redis
 
 # DB performance
 lando mysql -e "SELECT table_name, round(((data_length+index_length)/1024/1024),2) 'MB' FROM information_schema.TABLES WHERE table_schema=DATABASE() ORDER BY (data_length+index_length) DESC;"
@@ -727,7 +727,7 @@ lando drush config:set system.site uuid [correct-uuid]  # UUID mismatch
 
 ### Memory Issues
 ```bash
-# Point `config.config.php` in `.lando.local.yml` to a custom `config/php.ini`, then apply it
+# Add a custom PHP override in `.lando.local.yml` or your Landofile, then apply it
 lando rebuild -y
 # Or: lando php -d memory_limit=1G vendor/bin/drush [cmd]
 ```
